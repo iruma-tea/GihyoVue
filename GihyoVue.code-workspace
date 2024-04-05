@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.iconTheme": "vscode-icons",
+		"workbench.colorTheme": "Monokai",
+		"files.eol": "\n",
+		"files.encoding": "utf8",
+	}
+}
