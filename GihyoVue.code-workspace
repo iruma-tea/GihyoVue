@@ -9,5 +9,8 @@
 		"workbench.colorTheme": "Monokai",
 		"files.eol": "\n",
 		"files.encoding": "utf8",
+		"[vue]": {
+			"editor.formatOnSave": true,
+		},
 	}
 }
