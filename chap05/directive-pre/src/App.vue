@@ -1,10 +1,5 @@
-<script setup lang="ts">
-import { ref } from "vue";
-
-
-</script>
-
 <template>
-  <main>
-  </main>
+  <section v-pre>
+    <p v-on:click="showHello">{{ hello! }}</p>
+  </section>
 </template>
