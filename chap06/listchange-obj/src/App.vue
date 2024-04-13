@@ -1,47 +1,35 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { ref } from "vue";
+
+const whiteLadyInit: {
+  id: number;
+  name: string;
+  price: number;
+  recipe: string;
+} = {
+  id: 2345,
+  name: "ホワイトレディ",
+  price: 1200,
+  recipe: "ジン30ml+コワントロー15ml+レモン果汁+15ml",
+}
+
+const whiteLady = ref(whiteLadyInit);
+const changeWhiteLadyPrice = ():void => {
+  whiteLady.value.price = 1500;
+};
+
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <dl>
+    <template v-for="(value, key) in whiteLady" v-bind:key="key">
+      <dt>{{ key }}</dt>
+      <dd>{{ value }}</dd>
+    </template>
+  </dl>
+  <p>
+    価格を1500円に
+    <button v-on:click="changeWhiteLadyPrice">変更</button>
+  </p>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
