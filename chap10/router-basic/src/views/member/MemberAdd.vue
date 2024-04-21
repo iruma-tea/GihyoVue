@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { inject, reactive } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import type { Member } from '@/interfaces';
 
+const router = useRouter();
 const memberList = inject("memberList") as Map<number, Member>;
 const member = reactive({
     id: 0,
@@ -14,6 +15,8 @@ const member = reactive({
 
 const onAdd = () => {
     console.log(member);
+    memberList.set(member.id, member);
+    router.push({name: "MemberList"});
 };
 </script>
 <template>
