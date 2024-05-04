@@ -39,6 +39,14 @@ export const useMembersStore = defineStore({
             // ステートにmemberListを格納
             this.memberList = memberList;
         },
+        insertMember(member: Member): void {
+            // ステートの会員情報に追加
+            this.memberList.set(member.id, member);
+            // ステートの会員情報をJSON文字列に変換
+            const memberListJSONStr = JSON.stringify([...this.memberList]);
+            // セッションストレージに格納
+            sessionStorage.setItem("memberList", memberListJSONStr);
+        },
         initList(): void {
             this.memberList.set(33456, {id: 33456, name: "田中太郎", email: "bow@example.com", points: 35, note:"初回入会特権あり。"})
             this.memberList.set(44783, {id: 44873, name:"鈴木次郎", email: "mue@example.com", points: 53});
