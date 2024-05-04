@@ -18,6 +18,12 @@ const isEmptyList = computed(
         return membersStore.isMemberListEmpty;
     }
 );
+
+const isLoading = computed(
+    (): boolean => {
+        return membersStore.isLoading;
+    }
+);
 </script>
 
 <template>
@@ -35,7 +41,10 @@ const isEmptyList = computed(
         <p>
             新規登録は<RouterLink v-bind:to="{name: 'MemberAdd'}">こちら</RouterLink>から
         </p>
-        <section>
+        <p v-if="isLoading">
+            データ取得中・・・
+        </p>
+        <section v-else>
             <ul>
                 <li v-if="isEmptyList">会員情報は存在しません。</li>
                 <li v-for="[id, member] in memberList" v-bind:key="id">

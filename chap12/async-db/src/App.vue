@@ -1,6 +1,6 @@
 <template>
   <header>
-      <h1>Pinia サンプル</h1>
+      <h1>IndexedDB サンプル</h1>
   </header>
   <main>
       <RouterView />

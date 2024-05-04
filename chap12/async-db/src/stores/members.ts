@@ -3,13 +3,43 @@ import type { Member } from "@/interfaces";
 
 interface State {
     memberList: Map<number, Member>;
+    isLoading: boolean;
+}
+
+let _database: IDBDatabase;
+async function getDatabase(): Promise<IDBDatabase> {
+    const promise = new Promise<IDBDatabase>(
+        (resolve, reject): void => {
+            if (_database != undefined) {
+                resolve(_database);
+            } else {
+                const request = window.indexedDB.open("asyncdb", 1);
+                request.onupgradeneeded = (event) => {
+                    const target = event.target as IDBRequest;
+                    const database = target.result as IDBDatabase;
+                    database.createObjectStore("members", {keyPath: "id"});
+                }
+                request.onsuccess = (event) => {
+                    const target = event.target as IDBRequest
+                    _database = target.result as IDBDatabase;
+                    resolve(_database);
+                };
+                request.onerror = (event) => {
+                    console.log("ERROR: DBをオープンできません。", event);
+                    reject(new Error("ERROR: DBをオープンできません。"));
+                };
+            }                   
+        }
+    );
+    return promise;
 }
 
 export const useMembersStore = defineStore({
     id: "members",
     state: (): State => {
         return {
-            memberList: new Map<number, Member>()
+            memberList: new Map<number, Member>(),
+            isLoading: true,
         };
     },
     getters: {
@@ -24,35 +54,84 @@ export const useMembersStore = defineStore({
         }
     },
     actions: {
-        prepareMemberList(): void {
-            // 空のmemberListを用意
-            let memberList = new Map<number, Member>();
-            // セッションストレージからデータを取得
-            const memberListJSONStr = sessionStorage.getItem("memberList");
-            // セッションストレージのデータが空じゃないなら
-            if (memberListJSONStr != undefined) {
-                // JSON文字列をJSONオブジェクトに変換
-                const memberListJSON = JSON.parse(memberListJSONStr);
-                // JSONオブジェクトをもとにmemberListを生成
-                memberList = new Map<number, Member>(memberListJSON);
-            }
-            // ステートにmemberListを格納
-            this.memberList = memberList;
+        async prepareMemberList(): Promise<boolean> {
+            // データベースオブジェクトを取得する
+            const database = await getDatabase();
+            const promise = new Promise<boolean>(
+                (resolve, reject) => {
+                    // トランザクションオブジェクトを取得する
+                    const transaction = database.transaction("members", "readonly");
+                    // membersオブジェクトストアを取得する
+                    const objectStore = transaction.objectStore("members");
+                    // 空のメンバーリストを生成
+                    const memberList = new Map<number, Member>();
+                    // membersオブジェクトストアの全データを取得
+                    const request = objectStore.openCursor();
+                    // データ取得が成功した場合の処理を登録
+                    request.onsuccess = (event) => {
+                        //カーソルオブジェクトを取得
+                        const target = event.target as IDBRequest;
+                        const cursor = target.result as IDBCursorWithValue;
+                        // カーソルが存在すれば
+                        if (cursor) {
+                            // カーソルからキーデータを取得
+                            const id = cursor.key as number;
+                            // カーソルから値オブジェクトを取得
+                            const member = cursor.value as Member;
+                            // memberListに格納
+                            memberList.set(id, member);
+                            // 次のデータに同じ処理を実行
+                            cursor.continue();
+                        }
+                    };
+                    // トランザクションが成功した場合の処理を登録
+                    transaction.oncomplete = () => {
+                        // ステートにmemberListを格納
+                        this.memberList = memberList;
+                        // ステートのisLoadingをfalseに変更
+                        this.isLoading = false;
+                        // 非同期処理成功。Promise内の戻り値をtrueに。
+                        resolve(true);
+                    };
+                    // トランザクション処理が失敗した場合の処理を登録
+                    transaction.onerror = (event) => {
+                        // 非同期処理失敗。エラーメッセージを格納
+                        console.log("ERROR: データ取得に失敗。", event);
+                        reject(new Error("ERROR: データ取得に失敗"));
+                    };    
+                }
+            );
+            return promise;
         },
-        insertMember(member: Member): void {
-            // ステートの会員情報に追加
-            this.memberList.set(member.id, member);
-            // ステートの会員情報をJSON文字列に変換
-            const memberListJSONStr = JSON.stringify([...this.memberList]);
-            // セッションストレージに格納
-            sessionStorage.setItem("memberList", memberListJSONStr);
+        async insertMember(member: Member): Promise<boolean> {
+            // memberオブジェクト生成。
+            const memberAdd: Member = {
+                ...member
+            };
+            // データベースオブジェクトを取得する
+            const database = await getDatabase();
+            const promise = new Promise<boolean>(
+                (resolve, reject) => {
+                    // トランザクションオブジェクトを取得する
+                    const transaction = database.transaction("members", "readwrite");
+                    // membersオブジェクトストアを取得する
+                    const objectStore = transaction.objectStore("members");
+                    // データ登録。
+                    objectStore.put(memberAdd);
+                    // トランザクションが成功した場合の処理を登録
+                    transaction.oncomplete = () => {
+                        // 非同期処理成功。promise内の戻り値をtrueに。
+                        resolve(true);
+                    };
+                    // トランザクションが失敗した場合の処理を登録
+                    transaction.onerror = (event) => {
+                        // 非同期処理失敗。エラーメッセージを格納
+                        console.log("ERROR: データ登録に失敗。", event);
+                        reject(new Error("ERROR: データ登録に失敗。"));
+                    };
+                }
+            );
+            return promise;
         },
-        initList(): void {
-            this.memberList.set(33456, {id: 33456, name: "田中太郎", email: "bow@example.com", points: 35, note:"初回入会特権あり。"})
-            this.memberList.set(44783, {id: 44873, name:"鈴木次郎", email: "mue@example.com", points: 53});
-        },
-        addMember(member: Member): void {
-            this.memberList.set(member.id, member);
-        }
-    }
+     }
 });
